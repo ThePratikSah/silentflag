@@ -31,3 +31,9 @@ app.get('/', async (c, next) => {
 	return c.json(usersData);
 });
 ```
+
+## Custom Loggers
+We have added custom logger for better logs. To use it, this is the syntax:
+```ts
+customLogger('Blog saved:', `Path: ${blog.url},`, `ID: ${blog.id}`)
+```

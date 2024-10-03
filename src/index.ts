@@ -1,13 +1,17 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle, NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { Hono } from 'hono';
+import { logger } from 'hono/logger';
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './db/schema';
+import users from './users';
+import { customLogger } from './utils/logger';
 
 export type Env = {
 	DATABASE_URL: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();
+app.use(logger(customLogger));
 
 app.use(async (c, next) => {
 	const databaseUrl = c.env.DATABASE_URL;
@@ -17,16 +21,11 @@ app.use(async (c, next) => {
 	await next();
 });
 
-app.get('/', async (c, next) => {
-	const db = c.get('db') as NeonHttpDatabase<typeof schema>;
-	const usersData = await db
-		.select({
-			uuid: schema.users.id,
-			name: schema.users.name,
-			email: schema.users.email,
-		})
-		.from(schema.users);
-	return c.json({ usersData });
+app.route('/users', users);
+
+app.onError((err, c) => {
+	customLogger(`${err}`);
+	return c.text('Something went wrong', 500);
 });
 
 export default app;
